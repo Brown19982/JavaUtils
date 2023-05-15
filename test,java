@@ -1,3 +1,2 @@
-The application's $ embeds untrusted data in the generated output with append, at line 110 of src\main\webapp\admin\Upload.html. This untrusted data is embedded straight into the output without proper sanitization or encoding, enabling an attacker to inject malicious code into the output.
-
+在src\main\webapp\admin\GroupSetting.html文件中的function方法的第71行，引用了一個過時的API：trim。這已經被棄用，不應該在當前的版本中使用。
 

@@ -1,3 +1,2 @@
-Errors occurred during the build.
-Errors running builder 'CDI (Contexts and Dependency Injection) Builder' on project 'ec-server'.
-Cannot invoke "org.eclipse.jdt.internal.compiler.util.HashtableOfPackage.get(char[])" because "this.knownPackages" is null
+An internal error occurred during: "Loading DOM for JAX-WS Web Services".
+java.lang.NullPointerException

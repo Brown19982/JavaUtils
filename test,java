@@ -1,0 +1,63 @@
+/**
+     * 產出電子保單
+     * 
+     * @param orders
+     * @throws Exception
+     */
+    private File exportEpolicy(Orders orders) throws Exception {
+        Path outputPath = Paths.get(SysConst.EPOLICY_PDF_LOCATION, DateUtil.getFormatedDate(orders.getOdDateApp(), "yyyyMMdd"),
+                orders.getOdPolName());
+        if (!Files.exists(outputPath.getParent())) {
+            Files.createDirectories(outputPath.getParent());
+        }
+
+        Document document = new Document();
+        File policyFrontFile = null;
+        File bpolicyFile = null;
+        try {
+            PdfWriter writer = PdfWriter.getInstance(document, new FileOutputStream(outputPath.toFile()));
+            PdfImportedPage page;
+            document.open();
+            PdfContentByte cb = writer.getDirectContent();
+
+            // 產出保單封面
+            policyFrontFile = this.exportPolicyFront(orders);
+            PdfReader policyFrontReader = new PdfReader(new FileInputStream(policyFrontFile));
+            for (int i = 1; i <= policyFrontReader.getNumberOfPages(); i++) {
+                document.newPage();
+                page = writer.getImportedPage(policyFrontReader, i);
+                cb.addTemplate(page, 0, 0);
+            }
+            
+            // 既有保單內容加上浮水印
+            Path inputPath = Paths.get(SysConst.QUERY_PDF_LOCATION, orders.getOdPolName());
+            bpolicyFile = PDFUtils.pdfMixWatermark(inputPath.toFile(), orders.getOdIdc());
+            PdfReader bpolicyReader = new PdfReader(new FileInputStream(bpolicyFile));
+            for (int i = 1; i <= bpolicyReader.getNumberOfPages(); i++) {
+                // 第四頁為補空白頁於要保書後，電子保單需移除
+                if (i == 4) {
+                    continue;
+                }
+                document.newPage();
+                page = writer.getImportedPage(bpolicyReader, i);
+                cb.addTemplate(page, 0, 0);
+            }
+
+            // 產出保單封底
+            Path policyBackPath = Paths.get(SysConst.JASPER_LOCATION, "PolicyBack.pdf");
+            PdfReader policyBackReader = new PdfReader(new FileInputStream(policyBackPath.toFile()));
+            for (int i = 1; i <= policyBackReader.getNumberOfPages(); i++) {
+                document.newPage();
+                page = writer.getImportedPage(policyBackReader, i);
+                cb.addTemplate(page, 0, 0);
+            }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
+            throw e;
+        } finally {
+            document.close();
+            policyFrontFile.delete();
+            bpolicyFile.delete();
+        }
+        return outputPath.toFile();
+    }

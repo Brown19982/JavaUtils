@@ -1,2 +1,14 @@
-在src\main\webapp\admin\GroupSetting.html文件中的function方法的第71行，引用了一個過時的API：trim。這已經被棄用，不應該在當前的版本中使用。
-
+@AuditRecord("主管專案審核")
+	@RequestMapping(value = "/updateLotteryFlag", method = RequestMethod.POST)
+	public @ResponseBody CommonResult<String> updateLotteryFlag(@RequestBody List<AuditRecordVO> auditrecordlist, Principal principal) throws Exception {
+		String user = principal.getName();
+		for (AuditRecordVO auditrecord : auditrecordlist) {
+			String lotteryFalg = auditrecord.getStatus();
+			String type = auditrecord.getAuditType();
+			String id = auditrecord.getId();
+			String memo = auditrecord.getMemo();
+			dao.updateLotteryFlag(lotteryFalg, type, id, memo, user);
+		}
+		return CommonResult.success();
+	}
+  auditrecordlist獲取使用者輸入。該元素的值於程式流程中沒有被正確地過濾(Filter)或驗證

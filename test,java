@@ -1,1 +1,3 @@
-The web-application does not define an HSTS header, leaving it vulnerable to attack.
+The concurrent process makeExcelFile found in the file src\main\java\com\tgl\controller\ExportController.java at line 136 influences the shared resource formaterDash in the file src\main\java\com\tgl\controller\ExportController.java at line 136. When performed concurrently, an unexpected race condition may occur.
+
+

@@ -1,3 +1,15 @@
-The concurrent process makeExcelFile found in the file src\main\java\com\tgl\controller\ExportController.java at line 136 influences the shared resource formaterDash in the file src\main\java\com\tgl\controller\ExportController.java at line 136. When performed concurrently, an unexpected race condition may occur.
+應用程式中的parameterType="map">透過award-mbg\src\main\resources\com\tgl\award\mbg\mapper\AwardInfoMapper.xml中的218之executeUpdate執行SQL 查詢(Query)。此應用程式建構SQL查詢時，在未過濾的的情況下將不受信任的字串嵌入到查詢字串中。串接後的查詢字串被提交到資料庫，在資料庫中進行解析(parse)及執行(executed)。
 
+攻擊者能夠把任意資料注入SQL查詢，只要簡單的改變 award-admin\src\main\java\com\tgl\award\admin\controller\ProjectController.java 中 updateGift 第 178 的使用者輸入projectId，這些未經過濾的使用者輸入就會隨成程式進入資料庫Server。
 
+這可能會造成SQL注入攻擊(SQL Injection)。
+
+	@SystemLog("更新獎項")
+	@ApiOperation(value = "更新獎項")
+	@PostMapping(value = "/updateGift/{id}")
+	public CommonResult<String> updateGift(@PathVariable("id") String projectId, @RequestBody List<ProjectGiftBo> projectGiftBos) throws Exception {
+		List<ProjectGiftBo> filteredBos = ProjectGiftBo.XSSfilter(projectGiftBos);
+		String response = EsapiUtil.XSSfilter(ESAPI.validator(),
+				this.awardProjectService.updateGift(projectId, filteredBos));
+		return CommonResult.success(response);
+	}

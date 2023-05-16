@@ -1,14 +1,22 @@
-@AuditRecord("主管專案審核")
-	@RequestMapping(value = "/updateLotteryFlag", method = RequestMethod.POST)
-	public @ResponseBody CommonResult<String> updateLotteryFlag(@RequestBody List<AuditRecordVO> auditrecordlist, Principal principal) throws Exception {
-		String user = principal.getName();
-		for (AuditRecordVO auditrecord : auditrecordlist) {
-			String lotteryFalg = auditrecord.getStatus();
-			String type = auditrecord.getAuditType();
-			String id = auditrecord.getId();
-			String memo = auditrecord.getMemo();
-			dao.updateLotteryFlag(lotteryFalg, type, id, memo, user);
+function filterXSS(data) {
+	// 定義一個正則表達式，過濾任何可能造成 XSS 漏洞的特殊字元
+	var regex = /<script>|<\/script>|<iframe>|<\/iframe>|javascript:|onload=|onerror=|onmouseover=|onmouseout=|onclick=|onload=|onblur=|onchange=|onsubmit=|onreset=|style=/gi;
+
+	// 遞迴過濾回應中的所有屬性和值，並過濾任何特殊字元
+	function filter(obj) {
+		if (Array.isArray(obj)) {
+			return obj.map(filter);
+		} else if (typeof obj === 'object' && obj !== null) {
+			return Object.entries(obj)
+				.reduce((acc, [key, value]) => {
+					acc[key] = filter(value);
+					return acc;
+				}, {});
+		} else if (typeof obj === 'string') {
+			return obj.replace(regex, '');
 		}
-		return CommonResult.success();
+		return obj;
 	}
-  auditrecordlist獲取使用者輸入。該元素的值於程式流程中沒有被正確地過濾(Filter)或驗證
+
+	return filter(data);
+}

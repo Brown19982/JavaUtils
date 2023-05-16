@@ -1,16 +1,6 @@
-方法updateLotteryFlag在src\main\java\com\tgl\controller\AuditListController.java第57 行從元素auditrecordlist獲取使用者輸入。該元素的值於程式流程中沒有被正確地過濾(Filter)或驗證，並最終於src\main\java\com\tgl\util\JdbcUtils.java的第147行在save編寫審計日誌中。這可能發生日誌偽造。
-
-	@AuditRecord("主管專案審核")
-	@RequestMapping(value = "/updateLotteryFlag", method = RequestMethod.POST)
-	public @ResponseBody CommonResult<String> updateLotteryFlag(@RequestBody List<AuditRecordVO> auditrecordlist,
-			Principal principal) throws Exception {
-		String user = principal.getName();
-		for (AuditRecordVO auditrecord : auditrecordlist) {
-			String lotteryFalg = auditrecord.getStatus();
-			String type = auditrecord.getAuditType();
-			String id = auditrecord.getId();
-			String memo = auditrecord.getMemo();
-			dao.updateLotteryFlag(lotteryFalg, type, id, memo, user);
-		}
-		return CommonResult.success();
+@RequestMapping(method = RequestMethod.GET)
+	public String view() {
+		return "AuditList";
 	}
+
+The method view found at line 29 in src\main\java\com\tgl\controller\AuditListController.java sets an overly permissive CORS access control origin header.

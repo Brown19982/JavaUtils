@@ -1,7 +1,14 @@
-Unable to update Maven configuration
-Could not update project award-security configuration
-Preference node "org.eclipse.wst.validation" has been removed.
-Could not update project award-admin-pm configuration
-Preference node "org.eclipse.wst.validation" has been removed.
-Could not update project award-api-pm configuration
-Preference node "org.eclipse.wst.validation" has been removed.
+16:56:00,287 ERROR [org.jboss.as.controller.management-operation] (Controller Boot Thread) WFLYCTL0013: Operation ("add") failed - address: ([
+    ("subsystem" => "datasources"),
+    ("data-source" => "award")
+]) - failure description: {
+    "WFLYCTL0412: Required services that are not installed:" => [
+        "jboss.jdbc-driver.sqlserver",
+        "jboss.jdbc-driver.sqlserver"
+    ],
+    "WFLYCTL0180: Services with missing/unavailable dependencies" => [
+        "org.wildfly.data-source.award is missing [jboss.jdbc-driver.sqlserver]",
+        "jboss.driver-demander.java:jboss/evn/award is missing [jboss.jdbc-driver.sqlserver]",
+        "org.wildfly.data-source.award is missing [jboss.jdbc-driver.sqlserver]"
+    ]
+}

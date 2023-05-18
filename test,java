@@ -1,12 +1,10 @@
-checkmarx掃出我有高風險漏洞，我把風險訊息以及程式碼貼在下面，請幫我解決。
-
-應用程式中的parameterType="map">透過award-mbg\src\main\resources\com\tgl\award\mbg\mapper\AwardInfoMapper.xml中的218之executeUpdate執行SQL 查詢(Query)。此應用程式建構SQL查詢時，在未過濾的的情況下將不受信任的字串嵌入到查詢字串中。串接後的查詢字串被提交到資料庫，在資料庫中進行解析(parse)及執行(executed)。
+應用程式中的parameterType="com.tgl.award.mbg.model.AwardInfo">透過award-mbg\src\main\resources\com\tgl\award\mbg\mapper\AwardInfoMapper.xml中的218之executeUpdate執行SQL 查詢(Query)。此應用程式建構SQL查詢時，在未過濾的的情況下將不受信任的字串嵌入到查詢字串中。串接後的查詢字串被提交到資料庫，在資料庫中進行解析(parse)及執行(executed)。
 
 攻擊者能夠把任意資料注入SQL查詢，只要簡單的改變 award-admin\src\main\java\com\tgl\award\admin\controller\ProjectController.java 中 updateGift 第 178 的使用者輸入projectId，這些未經過濾的使用者輸入就會隨成程式進入資料庫Server。
 
 這可能會造成SQL注入攻擊(SQL Injection)。
 controller:
-	/**
+/**
 	 * 更新獎項
 	 * 
 	 * @param projectId      專案ID
@@ -20,37 +18,80 @@ controller:
 	public CommonResult<String> updateGift(@PathVariable("id") String projectId, @RequestBody List<ProjectGiftBo> projectGiftBos) throws Exception {
 		List<ProjectGiftBo> filteredBos = ProjectGiftBo.XSSfilter(projectGiftBos);
 		String response = EsapiUtil.XSSfilter(ESAPI.validator(),
-				this.awardProjectService.updateGift(EsapiUtil.XSSfilter(ESAPI.validator(),projectId), filteredBos));
+				this.awardProjectService.updateGift(projectId, filteredBos));
 		return CommonResult.success(response);
 	}
 	
-serverimpl:
+awardProjectService:
+
+	@Override
+	public String updateGift(String projectId, List<ProjectGiftBo> projectGiftBos) throws Exception {
+		log.info("開始執行 -> 更新獎項");
+		for (ProjectGiftBo projectGiftBo : projectGiftBos) {
+			AwardInfo awardInfo = AwardInfo.builder()
+					.projectId(projectId)
+					.awardName(projectGiftBo.getAwardName())
+					.awardAmount(projectGiftBo.getAwardAmount())
+					.build();
+			if (!this.awardInfoService.updateAwardInfo(awardInfo)) {
+				log.error("獎項更新失敗");
+				throw new Exception("獎項更新失敗");
+			}
+		}
+		if (!this.projectService.updateProjectFlagStatus(projectId, ProjectFlag.GIFT_SET.getCode())) {
+			log.error("更新專案狀態失敗");
+			throw new Exception("更新專案狀態失敗");
+		}
+		return "獎項更新成功";
+	}
+awardInfoService:
+	
 	@Override
 	public boolean updateAwardInfo(AwardInfo awardInfo) {
 		AwardInfoExample example = new AwardInfoExample();
 		AwardInfoExample.Criteria criteria = example.createCriteria();
-		criteria.andProjectIdEqualTo(awardInfo.getProjectId());
-		criteria.andAwardNameEqualTo(awardInfo.getAwardName());
-		return this.awardinfoMapper.updateByExampleSelective(awardInfo, example) > 0;
+		criteria.andAwardInfoIdEqualTo(awardInfo.getAwardInfoId());
+		return this.awardInfoMapper.updateByExampleSelective(awardInfo, example) == 1;
 	}
-awardinfoMapper.java:
+
+awardInfoMapper.java:
 	int updateByExampleSelective(@Param("record") AwardInfo record, @Param("example") AwardInfoExample example);
 awardinfoMapper.xml:
-	 <update id="updateByExample" parameterType="map">
-		update dbo.award_info
-		set award_info_id = #{record.awardInfoId,jdbcType=CHAR},
-		  project_id = #{record.projectId,jdbcType=CHAR},
-		  winner_id = #{record.winnerId,jdbcType=CHAR},
-		  winner_name = #{record.winnerName,jdbcType=NVARCHAR},
-		  email = #{record.email,jdbcType=VARCHAR},
-		  phone = #{record.phone,jdbcType=VARCHAR},
-		  award_amount = #{record.awardAmount,jdbcType=INTEGER},
-		  award_name = #{record.awardName,jdbcType=NVARCHAR},
-		  create_date = #{record.createDate,jdbcType=TIMESTAMP}
-		<if test="_parameter != null">
-		  <include refid="Update_By_Example_Where_Clause" />
-		</if>
-	  </update>
+  <update id="updateByExampleSelective" parameterType="com.tgl.award.mbg.model.AwardInfo">
+    update dbo.award_info
+    <set>
+      <if test="record.awardInfoId != null">
+        award_info_id = #{record.awardInfoId,jdbcType=CHAR},
+      </if>
+      <if test="record.projectId != null">
+        project_id = #{record.projectId,jdbcType=CHAR},
+      </if>
+      <if test="record.winnerId != null">
+        winner_id = #{record.winnerId,jdbcType=CHAR},
+      </if>
+      <if test="record.winnerName != null">
+        winner_name = #{record.winnerName,jdbcType=NVARCHAR},
+      </if>
+      <if test="record.email != null">
+        email = #{record.email,jdbcType=VARCHAR},
+      </if>
+      <if test="record.phone != null">
+        phone = #{record.phone,jdbcType=VARCHAR},
+      </if>
+      <if test="record.awardAmount != null">
+        award_amount = #{record.awardAmount,jdbcType=INTEGER},
+      </if>
+      <if test="record.awardName != null">
+        award_name = #{record.awardName,jdbcType=NVARCHAR},
+      </if>
+      <if test="record.createDate != null">
+        create_date = #{record.createDate,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    <if test="_parameter != null">
+      <include refid="Update_By_Example_Where_Clause" />
+    </if>
+  </update>
 
 
 	

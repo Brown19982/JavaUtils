@@ -1,66 +1,49 @@
-<%
-	
-	String system_date = CommonUtil.safeString(request.getParameter("system_date"), CommonUtil.getDate(""));
-	Date systemDate = CommonUtil.convertString2Date(system_date);
 
-	String sWorkDir =conf.getProperty("clause_filePath_frontend");
 
-	//顯示所有條款
-	boolean isShowAllClause = CommonUtil.safeString(request.getParameter("key")).equals("mPOS");
 
-	String sClauseFile = null;
-	try {
-		Encoder encoder = new DefaultEncoder(new ArrayList<String>());
-		sClauseFile = sanitize(request.getParameter("ClauseFile"));
-		sClauseFile = encoder.decodeFromURL(sClauseFile);
-	} catch (EncodingException e1) {
-		GardenLog.log(GardenLog.ERROR,e1);
-	}
-	
-	String sDownloadSource = request.getParameter("DownloadSource");
-	if (sClauseFile != null) {
-        byte[] oFileByteArray = FileUtil.getBytesFromFile(sWorkDir + "/" + sClauseFile);
-
-        ByteArrayInputStream is = new ByteArrayInputStream(oFileByteArray);
-        BufferedInputStream bufferedInputStream = new BufferedInputStream(is);
-
-        ByteArrayOutputStream arrayOutputStream =
-                new ByteArrayOutputStream();
-        byte[] bytes = new byte[1];
-		
-        while(bufferedInputStream.read(bytes) != -1) {
-        	Encoder encoder = DefaultEncoder.getInstance();
-            String content = new String(bytes);
-            String encodedContent = encoder.encodeForHTML(content);
-            String decodeContent = encoder.decodeForHTML(encodedContent);
-            byte[] encodedBytes = decodeContent.getBytes();
-            arrayOutputStream.write(encodedBytes);
+$.ajax({
+        type: 'post',
+        async: false,
+        dataType: "json",
+        url: ajaxPrefix + 'PropertiesServlet.do',
+        contentType: 'application/json; charset=UTF-8',
+        data: JSON.stringify({
+        	types: property_types
+        }),
+        success: function(json) {
+            if (typeof json == 'string') json = JSON.parse(json);
+        	if (json && json.success && json.data) {
+        		var url = json.data;
+				
+        		// 智能客服
+        		if (url.chatbot) {
+        			if (excludes.chatbot.length > 0) {
+						excludes.chatbot.forEach(exclude => {
+							if (window.location.href.indexOf(exclude) === -1) {
+								chatbot(url.chatbot);
+							}
+						});        				
+        			} else {
+						chatbot(url.chatbot);
+        			}
+        		}
+        		// 數位行為收集
+        		if (url.celebrus) {
+        			if (excludes.celebrus.length > 0) {
+    					excludes.celebrus.forEach(exclude => {
+    						if (window.location.href.indexOf(exclude) === -1) {
+    							appendScript(url.celebrus); 
+    						}
+    					});        				
+        			} else {
+						appendScript(url.celebrus);
+        			}
+        		}
+        		// 嘉實參數
+        		if (url.moneydj) {
+        			iframe_domain = url.moneydj;
+        		}        		
+        	}
         }
-        response.setContentType("application/pdf; charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment;filename=" + sClauseFile );
-        response.setContentLength(arrayOutputStream.size());
-        ServletOutputStream servletOutputStream = response.getOutputStream();
-        arrayOutputStream.writeTo(servletOutputStream);
-        servletOutputStream.flush();
-        servletOutputStream.close();
-        arrayOutputStream.close();
-	} else {
-		//群組代碼,群組名稱
-		//GroupCode,GroupName
-		DataSet oDS_ClauseGroup = new DataSet(new File(sWorkDir, conf.getProperty("clauseGroup_file")), true);
-// 		DataSet oDS_ClauseGroup = new DataSet(new File(sWorkDir, "ClauseGroup.csv"), true);
-
-		//是否為審閱期,上架日期,下架日期,群組代碼,排序代碼,險種代碼,版本,險種名稱,條款檔案
-		//isApprove,BeginDate,EndDate,GroupCode,OrderCode,PlanCode,Version,PlanName,ClauseFile
-		DataSet oDS_ClauseFile_All = new DataSet(new File(sWorkDir, conf.getProperty("addition_clause_file")), true);
-		// for work temp
-		Date tmpBeginDate = null;
-		Date tmpBeginDateStart = null;
-		Date tmpEndDate = null;
-		Date tmpPreReadingDate = null;
-		Date tmpPreReadingEndDate = null;
-		long fiveDays = 5 * 24 * 60 * 60 * 1000;
-		long oneDay = 1 * 24 * 60 * 60 * 1000;
-		long twoDays = 2 * 24 * 60 * 60 * 1000;
-		String planDesc = ""; // 顯示於險種名稱欄位
-%>
+    });
+方法function在transglobe\js\config.js第166 行會從使用者端取得暫存資訊(Cache)，如Cookie、HTML5的LocalStorage，或本地資料庫，做為json元素的值。而程式流程中沒有被正確地過濾(Filter)或編碼(Encode)，並最終在客戶端程式碼(JavaScript)在transglobe\js\config.js第215行appendScript方法於瀏覽器中執行。這可能為DOM存儲的程式碼注入(DOM

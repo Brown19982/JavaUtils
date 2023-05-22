@@ -1,6 +1,20 @@
-while(bufferedInputStream.read(bytes) != -1) {
-        	Encoder encoder = DefaultEncoder.getInstance();
-        	byte[] encodedBytes = encoder.encodeForHTML(bytes);
-			arrayOutputStream.write(bytes);
+byte[] oFileByteArray = FileUtil.getBytesFromFile(sWorkDir + "/" + sClauseFile);
+
+        ByteArrayInputStream is = new ByteArrayInputStream(oFileByteArray);
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(is);
+
+        ByteArrayOutputStream arrayOutputStream =
+                new ByteArrayOutputStream();
+        byte[] bytes = new byte[1];
+		
+        while(bufferedInputStream.read(bytes) != -1) {
+            arrayOutputStream.write(bytes);
         }
-The method encodeForHTML(String) in the type Encoder is not applicable for the arguments (byte[])
+        response.setContentType("application/pdf; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment;filename=" + sClauseFile );
+        response.setContentLength(arrayOutputStream.size());
+        ServletOutputStream servletOutputStream = response.getOutputStream();
+        arrayOutputStream.writeTo(servletOutputStream);
+        servletOutputStream.flush();
+        servletOutputStream.close();
+        arrayOutputStream.close();

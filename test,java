@@ -1,4 +1,25 @@
-byte[] oFileByteArray = FileUtil.getBytesFromFile(sWorkDir + "/" + sClauseFile);
+<%
+	
+	String system_date = CommonUtil.safeString(request.getParameter("system_date"), CommonUtil.getDate(""));
+	Date systemDate = CommonUtil.convertString2Date(system_date);
+
+	String sWorkDir =conf.getProperty("clause_filePath_frontend");
+
+	//顯示所有條款
+	boolean isShowAllClause = CommonUtil.safeString(request.getParameter("key")).equals("mPOS");
+
+	String sClauseFile = null;
+	try {
+		Encoder encoder = new DefaultEncoder(new ArrayList<String>());
+		sClauseFile = sanitize(request.getParameter("ClauseFile"));
+		sClauseFile = encoder.decodeFromURL(sClauseFile);
+	} catch (EncodingException e1) {
+		GardenLog.log(GardenLog.ERROR,e1);
+	}
+	
+	String sDownloadSource = request.getParameter("DownloadSource");
+	if (sClauseFile != null) {
+        byte[] oFileByteArray = FileUtil.getBytesFromFile(sWorkDir + "/" + sClauseFile);
 
         ByteArrayInputStream is = new ByteArrayInputStream(oFileByteArray);
         BufferedInputStream bufferedInputStream = new BufferedInputStream(is);
@@ -8,7 +29,11 @@ byte[] oFileByteArray = FileUtil.getBytesFromFile(sWorkDir + "/" + sClauseFile);
         byte[] bytes = new byte[1];
 		
         while(bufferedInputStream.read(bytes) != -1) {
-            arrayOutputStream.write(bytes);
+        	Encoder encoder = DefaultEncoder.getInstance();
+            String content = new String(bytes);
+            String encodedContent = encoder.encodeForHTML(content);
+            byte[] encodedBytes = encodedContent.getBytes();
+            arrayOutputStream.write(encodedBytes);
         }
         response.setContentType("application/pdf; charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment;filename=" + sClauseFile );
@@ -18,3 +43,23 @@ byte[] oFileByteArray = FileUtil.getBytesFromFile(sWorkDir + "/" + sClauseFile);
         servletOutputStream.flush();
         servletOutputStream.close();
         arrayOutputStream.close();
+	} else {
+		//群組代碼,群組名稱
+		//GroupCode,GroupName
+		DataSet oDS_ClauseGroup = new DataSet(new File(sWorkDir, conf.getProperty("clauseGroup_file")), true);
+// 		DataSet oDS_ClauseGroup = new DataSet(new File(sWorkDir, "ClauseGroup.csv"), true);
+
+		//是否為審閱期,上架日期,下架日期,群組代碼,排序代碼,險種代碼,版本,險種名稱,條款檔案
+		//isApprove,BeginDate,EndDate,GroupCode,OrderCode,PlanCode,Version,PlanName,ClauseFile
+		DataSet oDS_ClauseFile_All = new DataSet(new File(sWorkDir, conf.getProperty("addition_clause_file")), true);
+		// for work temp
+		Date tmpBeginDate = null;
+		Date tmpBeginDateStart = null;
+		Date tmpEndDate = null;
+		Date tmpPreReadingDate = null;
+		Date tmpPreReadingEndDate = null;
+		long fiveDays = 5 * 24 * 60 * 60 * 1000;
+		long oneDay = 1 * 24 * 60 * 60 * 1000;
+		long twoDays = 2 * 24 * 60 * 60 * 1000;
+		String planDesc = ""; // 顯示於險種名稱欄位
+%>

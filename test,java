@@ -32,7 +32,8 @@
         	Encoder encoder = DefaultEncoder.getInstance();
             String content = new String(bytes);
             String encodedContent = encoder.encodeForHTML(content);
-            byte[] encodedBytes = encodedContent.getBytes();
+            String decodeContent = encoder.decodeForHTML(encodedContent);
+            byte[] encodedBytes = decodeContent.getBytes();
             arrayOutputStream.write(encodedBytes);
         }
         response.setContentType("application/pdf; charset=UTF-8");

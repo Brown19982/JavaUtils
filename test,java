@@ -1,7 +1,19 @@
-
-
-
-$.ajax({
+function encodeHTML(str) {
+	return str.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
+}
+//取得AP參數
+(function() {
+	var property_types = ['chatbot','celebrus','moneydj'];
+	// 排除清單
+	var excludes = {
+		chatbot: ['/api/edm'],
+		celebrus: []
+	};
+    $.ajax({
         type: 'post',
         async: false,
         dataType: "json",
@@ -20,11 +32,12 @@ $.ajax({
         			if (excludes.chatbot.length > 0) {
 						excludes.chatbot.forEach(exclude => {
 							if (window.location.href.indexOf(exclude) === -1) {
-								chatbot(url.chatbot);
+								chatbot(encodeHTML(url.chatbot));
 							}
 						});        				
         			} else {
-						chatbot(url.chatbot);
+						chatbot(encodeHTML(url.chatbot));
+						
         			}
         		}
         		// 數位行為收集
@@ -32,11 +45,13 @@ $.ajax({
         			if (excludes.celebrus.length > 0) {
     					excludes.celebrus.forEach(exclude => {
     						if (window.location.href.indexOf(exclude) === -1) {
-    							appendScript(url.celebrus); 
+    							//appendScript(url.celebrus); 
+    							appendScript(encodeHTML(url.celebrus));
     						}
     					});        				
         			} else {
-						appendScript(url.celebrus);
+						//appendScript(url.celebrus);
+        				appendScript(encodeHTML(url.celebrus));
         			}
         		}
         		// 嘉實參數
@@ -46,4 +61,21 @@ $.ajax({
         	}
         }
     });
-方法function在transglobe\js\config.js第166 行會從使用者端取得暫存資訊(Cache)，如Cookie、HTML5的LocalStorage，或本地資料庫，做為json元素的值。而程式流程中沒有被正確地過濾(Filter)或編碼(Encode)，並最終在客戶端程式碼(JavaScript)在transglobe\js\config.js第215行appendScript方法於瀏覽器中執行。這可能為DOM存儲的程式碼注入(DOM
+})();
+
+// 智能客服
+function chatbot(url) {
+	sessionStorage.setItem('channel', 'CW');
+	appendScript(url);
+}
+
+// 加上Script
+function appendScript(url){
+	var comp = document.createElement('script');
+	comp.type = 'text/javascript';
+	comp.async = true;
+	comp.src = url;
+	var s = document.getElementsByTagName('script')[0];
+	s.parentNode.insertBefore(comp, s);		
+}
+方法function在transglobe\js\config.js第172 行會從使用者端取得暫存資訊(Cache)，如Cookie、HTML5的LocalStorage，或本地資料庫，做為json元素的值。而程式流程中沒有被正確地過濾(Filter)或編碼(Encode)，並最終在客戶端程式碼(JavaScript)在transglobe\js\config.js第224行appendScript方法於瀏覽器中執行。這可能為DOM存儲的程式碼注入(DOM

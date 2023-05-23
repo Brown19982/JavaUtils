@@ -1,96 +1,19 @@
-function filterXSS(data) {
-	// 定義一個正則表達式，過濾任何可能造成 XSS 漏洞的特殊字元
-	var regex = /<script>|<\/script>|<iframe>|<\/iframe>|javascript:|onload=|onerror=|onmouseover=|onmouseout=|onclick=|onload=|onblur=|onchange=|onsubmit=|onreset=|style=/gi;
 
-	// 遞迴過濾回應中的所有屬性和值，並過濾任何特殊字元
-	function filter(obj) {
-		if (Array.isArray(obj)) {
-			return obj.map(filter);
-		} else if (typeof obj === 'object' && obj !== null) {
-			return Object.entries(obj)
-				.reduce((acc, [key, value]) => {
-					acc[key] = filter(value);
-					return acc;
-				}, {});
-		} else if (typeof obj === 'string') {
-			return obj.replace(regex, '');
-		}
-		return obj;
-	}
+***************************
+APPLICATION FAILED TO START
+***************************
 
-	return filter(data);
-}
-//取得AP參數
-(function() {
-	var property_types = ['chatbot','celebrus','moneydj'];
-	// 排除清單
-	var excludes = {
-		chatbot: ['/api/edm'],
-		celebrus: []
-	};
-    $.ajax({
-        type: 'post',
-        async: false,
-        dataType: "json",
-        url: ajaxPrefix + 'PropertiesServlet.do',
-        contentType: 'application/json; charset=UTF-8',
-        data: JSON.stringify({
-        	types: property_types
-        }),
-        success: function(json) {
-            if (typeof json == 'string') json = JSON.parse(json);
-        	if (json && json.success && json.data) {
-				var safeJson = filterXSS(json);
-        		var url = safeJson.data;
-				
-        		// 智能客服
-        		if (url.chatbot) {
-        			if (excludes.chatbot.length > 0) {
-						excludes.chatbot.forEach(exclude => {
-							if (window.location.href.indexOf(exclude) === -1) {
-								chatbot(url.chatbot);
-							}
-						});        				
-        			} else {
-						chatbot(url.chatbot);
-						
-        			}
-        		}
-        		// 數位行為收集
-        		if (url.celebrus) {
-        			if (excludes.celebrus.length > 0) {
-    					excludes.celebrus.forEach(exclude => {
-    						if (window.location.href.indexOf(exclude) === -1) {
-    							appendScript(url.celebrus);
-    						}
-    					});        				
-        			} else {
-        				appendScript(url.celebrus);
-        			}
-        		}
-        		// 嘉實參數
-        		if (url.moneydj) {
-        			iframe_domain = url.moneydj;
-        		}        		
-        	}
-        }
-    });
-})();
+Description:
 
-// 智能客服
-function chatbot(url) {
-	sessionStorage.setItem('channel', 'CW');
-	appendScript(url);
-}
+The dependencies of some of the beans in the application context form a cycle:
 
-// 加上Script
-function appendScript(url){
-	var comp = document.createElement('script');
-	comp.type = 'text/javascript';
-	comp.async = true;
-	comp.src = url;
-	var s = document.getElementsByTagName('script')[0];
-	s.parentNode.insertBefore(comp, s);		
-}
+┌─────┐
+|  adminSecurityConfig (field private com.tgl.award.security.service.AdminService com.tgl.award.admin.config.AdminSecurityConfig.adminService)
+↑     ↓
+|  adminServiceImpl (field private com.tgl.award.security.util.JwtTokenUtil com.tgl.award.security.service.impl.AdminServiceImpl.jwtTokenUtil)
+└─────┘
 
-方法function在transglobe\js\config.js第187 行會從使用者端取得暫存資訊(Cache)，如Cookie、HTML5的LocalStorage，或本地資料庫，做為json元素的值。而程式流程中沒有被正確地過濾(Filter)或編碼(Encode)，並最終在客戶端程式碼(JavaScript)在transglobe\js\config.js第238行appendScript方法於瀏覽器中執行。這可能為DOM存儲的程式碼注入(DOM
+
+Action:
+
+Relying upon circular references is discouraged and they are prohibited by default. Update your application to remove the dependency cycle between beans. As a last resort, it may be possible to break the cycle automatically by setting spring.main.allow-circular-references to true.

@@ -1,1 +1,8 @@
-org.owasp.esapi.errors.ConfigurationException: java.lang.ClassNotFoundException: org.owasp.esapi.reference.Log4JLogFactory from [Module "deployment.cms.war" from Service Module Loader] LogFactory class (org.owasp.esapi.reference.Log4JLogFactory) must be in class path.
+ByteArrayOutputStream buffer = scholarshipService.getWinnerAcceptPdf(operator_id, scholarship_pool,isAdmin);
+				response.setContentType("application/pdf");
+				response.setContentLength(buffer.size());
+				ServletOutputStream out = response.getOutputStream();
+				buffer.writeTo(out);
+				out.flush();
+				out.close();
+				buffer.close();

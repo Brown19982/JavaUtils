@@ -1,1 +1,1 @@
-Exception java.lang.ExceptionInInitializerError: Cannot access defaults field of Properties [in thread "Worker-162: Updating Maven Project"]
+org.owasp.esapi.errors.ConfigurationException: java.lang.ClassNotFoundException: org.owasp.esapi.reference.Log4JLogFactory from [Module "deployment.cms.war" from Service Module Loader] LogFactory class (org.owasp.esapi.reference.Log4JLogFactory) must be in class path.

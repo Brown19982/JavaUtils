@@ -1,8 +1,4 @@
-ByteArrayOutputStream buffer = scholarshipService.getWinnerAcceptPdf(operator_id, scholarship_pool,isAdmin);
-				response.setContentType("application/pdf");
-				response.setContentLength(buffer.size());
-				ServletOutputStream out = response.getOutputStream();
-				buffer.writeTo(out);
-				out.flush();
-				out.close();
-				buffer.close();
+FileUtils.moveFile(file, dest);
+
+15:39:13,107 ERROR [com.neux.garden.log.GardenLog] (default task-44) org.apache.commons.io.FileExistsException:Destination '/mnt/TGLWEB/transglobe_resource/leap_do/product_dm2_icon/FDD/product_dm2_icon.png' already exists
+15:39:13,107 ERROR [com.neux.garden.log.GardenLog] (default task-44) org.apache.commons.io.FileUtils:moveFile(2654)

@@ -1,4 +1,84 @@
-FileUtils.moveFile(file, dest);
-
-15:39:13,107 ERROR [com.neux.garden.log.GardenLog] (default task-44) org.apache.commons.io.FileExistsException:Destination '/mnt/TGLWEB/transglobe_resource/leap_do/product_dm2_icon/FDD/product_dm2_icon.png' already exists
-15:39:13,107 ERROR [com.neux.garden.log.GardenLog] (default task-44) org.apache.commons.io.FileUtils:moveFile(2654)
+var pdfDocument;
+			var jsUrl = '<%=pdfurl%>';
+			var jsUrlAsString = jsUrl.toString();
+			loadPDF(jsUrlAsString,1.5);
+			function loadPDF(pdfurl, scale) {
+			    pdfjsLib.getDocument(pdfurl).promise.then(pdf => {
+			        pdfDocument = pdf;
+			        let viewer = document.getElementById('viewer');
+			        for (let i = 0; i < pdf.numPages; i++) {
+			            let page = createEmptyPage(i + 1);
+			            viewer.appendChild(page);
+			        }
+			        for (var j = 1; j <= pdfDocument.numPages; j++) {
+			            loadPage(j, scale).then(pdfPage => {
+			                pdfPage.getViewport({ scale: scale });
+			            });
+			        }
+			    });
+			}
+	
+	
+			function createEmptyPage(num) {
+			    let page = document.createElement('div');
+			    let canvas = document.createElement('canvas');
+			    let wrapper = document.createElement('div');
+			    let textLayer = document.createElement('div');
+	
+			    page.className = 'page';
+			    wrapper.className = 'canvasWrapper';
+			    textLayer.className = 'textLayer';
+	
+			    page.setAttribute('id', `pageContainer${num}`);
+			    page.setAttribute('data-loaded', 'false');
+			    page.setAttribute('data-page-number', num);
+	
+			    canvas.setAttribute('id', `page${num}`);
+	
+			    page.appendChild(wrapper);
+			    page.appendChild(textLayer);
+			    wrapper.appendChild(canvas);
+	
+			    return page;
+			}
+	
+			function loadPage(pageNum, scale) {
+			    return pdfDocument.getPage(pageNum).then(pdfPage => {
+			        let page = document.getElementById(`pageContainer${pageNum}`);
+			        let canvas = page.querySelector('canvas');
+			        let wrapper = page.querySelector('.canvasWrapper');
+			        let container = page.querySelector('.textLayer');
+			        let canvasContext = canvas.getContext('2d');
+			        let viewport = pdfPage.getViewport({ scale: scale });
+	
+			        canvas.width = viewport.width;
+			        canvas.height = viewport.height;
+			        page.style.width = `${viewport.width}px`;
+			        page.style.height = `${viewport.height}px`;
+			        wrapper.style.width = `${viewport.width}px`;
+			        wrapper.style.height = `${viewport.height}px`;
+			        container.style.width = `${viewport.width}px`;
+			        container.style.height = `${viewport.height}px`;
+			        container.style.transform = `scale(${scale})`;
+			        pdfPage.render({
+			            canvasContext,
+			            viewport
+			        });
+	
+			        pdfPage.getTextContent().then(textContentSource => {
+			            pdfjsLib.renderTextLayer({
+			                textContentSource: textContentSource,
+			                container: container,
+			                viewport: viewport,
+			                textDivs: []
+			            });
+			        });
+	
+			        page.setAttribute('data-loaded', 'true');
+			        let viewer = document.getElementById('viewer');
+			        //viewer.style.height = `${viewport.height * pdfDocument.numPages}px`;
+			        viewer.style.height = 'auto';
+			        viewer.style.overflowX = 'auto'
+			        return pdfPage;
+			    });
+			}

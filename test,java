@@ -1,23 +1,60 @@
-var pdfDocument;
+以下是console print的錯誤訊息
+Uncaught (in promise) Error: Cannot use the same canvas during multiple render() operations. Use different canvas or ensure previous operations were cancelled or completed.
+    at InternalRenderTask.initializeGraphics (pdf.js:2640:15)
+    at pdf.js:1445:26
+
+以下是我的jsp程式碼
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="com.neux.utility.utils.jsp.JSPUtils" %>
+<%@ page import="com.neux.utility.utils.jsp.info.JSPQueryStringInfo" %>
+<%@ page import="java.net.URLDecoder" %>
+<%@ page import="java.net.URL" %>
+<%
+	request.setCharacterEncoding("utf-8");
+	JSPQueryStringInfo queryStringInfo = JSPUtils.setParams(request, false);
+	String pdfurl = queryStringInfo.getParam("url");
+	pdfurl = URLDecoder.decode(pdfurl,"utf-8");
+	byte[] b2 = org.apache.commons.codec.binary.Base64.decodeBase64(pdfurl.getBytes("utf-8"));
+	pdfurl = new String(b2,"utf-8");
+    // 构建 URL
+    String scheme = request.getScheme(); // 获取协议，例如 "http" 或 "https"
+    String serverName = request.getServerName(); // 获取服务器名称，例如 "example.com"
+    int serverPort = request.getServerPort(); // 获取服务器端口号，例如 80
+    // 构建 URL 字符串
+    String domain = scheme + "://" + serverName + (serverPort != 80 ? ":" + serverPort : "");
+	pdfurl = domain + pdfurl;
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<meta http-equiv="Content-Style-Type" content="text/css" />
+		<title>Document</title>
+	</head>
+	<body>
+		<div id="viewer" class="pdfViewer"></div>
+		<script src="<%=request.getContextPath()%>/assets/plugins/pdfJs/pdf.js"></script>
+		<script src="<%=request.getContextPath()%>/assets/plugins/pdfJs/pdf.worker.js"></script>
+		<script>
+			var pdfDocument;
 			var jsUrl = '<%=pdfurl%>';
 			var jsUrlAsString = jsUrl.toString();
 			loadPDF(jsUrlAsString,1.5);
 			function loadPDF(pdfurl, scale) {
 			    pdfjsLib.getDocument(pdfurl).promise.then(pdf => {
-			        pdfDocument = pdf;
-			        let viewer = document.getElementById('viewer');
-			        for (let i = 0; i < pdf.numPages; i++) {
-			            let page = createEmptyPage(i + 1);
-			            viewer.appendChild(page);
-			        }
-			        for (var j = 1; j <= pdfDocument.numPages; j++) {
-			            loadPage(j, scale).then(pdfPage => {
-			                pdfPage.getViewport({ scale: scale });
-			            });
-			        }
+			    	 pdfDocument = pdf;
+		                let viewer = document.getElementById('viewer');
+		                for (let i = 0; i < pdfDocument.numPages; i++) {
+		                    let page = createEmptyPage(i + 1);
+		                    viewer.appendChild(page);
+		                }
+		                for (var j = 1; j <= pdfDocument.numPages; j++) {
+		                    loadPage(j, scale).then(pdfPage => {
+		                        pdfPage.getViewport({ scale: scale });
+		                    });
+		                }
 			    });
 			}
-	
 	
 			function createEmptyPage(num) {
 			    let page = document.createElement('div');
@@ -82,3 +119,6 @@ var pdfDocument;
 			        return pdfPage;
 			    });
 			}
+		</script>
+	</body>
+</html>

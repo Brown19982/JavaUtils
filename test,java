@@ -1,9 +1,6 @@
- if(scale === 'page-width')
-                {
-                    var page_width = document.getElementById('viewer').clientWidth / pdfPage.getViewport({ scale: 1 }).width
-                    viewport = pdfPage.getViewport({ scale: page_width });
-                }
-                else
-                {
-                    viewport = pdfPage.getViewport({ scale: scale/100 });
-                }
+127:9999 --command=/host=server-APP/server-config=cms-server:start
+14:21:16 {
+14:21:16     "outcome" => "failed",
+14:21:16     "failure-description" => "WFLYCTL0158: Operation handler failed: java.lang.IllegalStateException",
+14:21:16     "rolled-back" => true
+14:21:16 }

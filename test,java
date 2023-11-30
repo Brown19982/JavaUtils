@@ -1,17 +1,247 @@
-        loadPDF(jsUrlAsString, scale);
-       
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>testHTML</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+</head>
+<style>
+    body {
+        background-color: rgb(211, 213, 216);
+        font-size: 48px;
+    }
+
+    #viewer {
+        justify-content: center;
+        align-items: center;
+
+    }
+
+    .page {
+        background-color: white;
+        /* 頁面背景色 */
+        border: 1px solid #ccc;
+        /* 頁面邊框 */
+        margin: 1px auto -8px auto
+    }
+
+    .scale-select-div>* {
+        align-items: center;
+    }
+
+    .toolbar {
+        display: flex;
+        background-color: rgb(101, 102, 102);
+        height: 90px;
+        padding: 20px 50px;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 20px;
+        top: 0;
+        position: fixed;
+    }
+
+    img {
+        transform: scale(3);
+        margin-right: 50px;
+    }
+
+    .scale-select {
+        margin-right: 50px;
+    }
+
+    .arrow {
+        margin-right: 50px;
+    }
+
+    .material-symbols-outlined {
+        margin-right: 50px;
+        color: white;
+        transform: scale(3);
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 800,
+            'GRAD' 0,
+            'opsz' 24
+    }
+
+    .material-symbols-sharp {
+        margin-right: 50px;
+        color: white;
+        transform: scale(3);
+        font-variation-settings:
+            'FILL' 1,
+            'wght' 700,
+            'GRAD' 200,
+            'opsz' 40
+    }
+
+    span:hover {
+        cursor: pointer;
+    }
+
+    #pageNum {
+        width: 85px;
+        font-size: 48px;
+        background-color: rgb(63, 75, 91);
+        text-align: right;
+        color: white;
+        border-radius: 10px;
+    }
+
+    .scale-select {
+        width: 250px;
+        font-size: 48px;
+    }
+
+    .voice-time {
+        margin-right: 50px;
+        font-size: 48px;
+        color: white;
+    }
+
+    #numPages {
+        color: white;
+        cursor: default
+    }
+
+    #viewerContainer {
+        overflow: auto;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<body>
+
+    <div id="viewer-container">
+        <div id="viewer" class="pdfViewer"></div>
+    </div>
+
+    <script src="pdf.js"></script>
+    <script src="pdf.worker.js"></script>
+    <script src="pdf_viewer.js"></script>
+    <script src="jquery-3.2.1.min.js"></script>
+    <script>
+        var pdfDocument;
+        var jsUrl = './FHP_11007.pdf';
+        var jsUrlAsString = jsUrl.toString();
+        var currentPage = 1;
+        var scale = "page-width"; // 默认为页面宽度
+        const eventBus = new pdfjsViewer.EventBus();
+        var pdfViewer;
+
+        // 在 loadPDF 完成後執行其他操作
+        loadPDF(jsUrlAsString, scale).then(() => {
+            pdfViewer = new pdfjsViewer.PDFViewer({
+                container: document.getElementById('viewer-container'),
+                eventBus: eventBus,
+            })
+            pdfViewer.setDocument(pdfDocument);
+        }).catch(error => {
+            console.error('加載 PDF 失敗', error);
+        });
+
         function loadPDF(pdfurl, scale) {
-            pdfjsLib.getDocument(pdfurl).promise.then(pdf => {
+            return pdfjsLib.getDocument(pdfurl).promise.then(pdf => {
                 pdfDocument = pdf;
                 let viewer = document.getElementById('viewer');
                 for (let i = 1; i <= pdfDocument.numPages; i++) {
                     let page = createEmptyPage(i, i);
                     viewer.appendChild(page);
                 }
-                for (var j = 1; j <= pdfDocument.numPages; j++) {
-                    loadPage(j, scale, j).then(pdfPage => {
-                        pdfPage.currentScaleValue = 'page-width';
+                // 返回一個 Promise，表示成功完成
+                return Promise.all(Array.from({ length: pdfDocument.numPages }, (_, i) => loadPage(i + 1, scale, i + 1)))
+                    .then(pdfPages => {
+                        pdfPages.forEach(pdfPage => {
+                            pdfPage.currentScaleValue = 'page-width';
+                        });
                     });
-                }
             });
         }
+        function createEmptyPage(num, k) {
+            let page = document.createElement('div');
+            let canvas = document.createElement('canvas');
+            let wrapper = document.createElement('div');
+            let textLayer = document.createElement('div');
+
+            page.className = 'page';
+            wrapper.className = 'canvasWrapper';
+            textLayer.className = 'textLayer';
+
+            page.setAttribute('id', `pageContainer-` + k);
+            page.setAttribute('data-loaded', 'false');
+            page.setAttribute('data-page-number', num);
+
+            // canvas.setAttribute('id', `page${num}-` + k);
+
+            page.appendChild(wrapper);
+            page.appendChild(textLayer);
+            wrapper.appendChild(canvas);
+
+            return page;
+        }
+
+        function loadPage(pageNum, scale, k) {
+            return pdfDocument.getPage(pageNum).then(pdfPage => {
+                let page = document.getElementById(`pageContainer-` + k);
+                let canvas = page.querySelector('canvas');
+                let wrapper = page.querySelector('.canvasWrapper');
+                let container = page.querySelector('.textLayer');
+                let canvasContext = canvas.getContext('2d');
+                let viewport = pdfPage.getViewport({ scale: scale });
+                if (scale === 'page-width') {
+                    var page_width = document.getElementById('viewer').clientWidth / pdfPage.getViewport({ scale: 1 }).width
+                    viewport = pdfPage.getViewport({ scale: page_width });
+                }
+                else {
+                    // 將scale轉換為數字類型再進行計算
+                    var scaleValue = parseFloat(scale) / 100;
+                    viewport = pdfPage.getViewport({ scale: scaleValue });
+                    container.style.transform = `scale(${scaleValue})`;
+                }
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                page.style.width = `${viewport.width}px`;
+                page.style.height = `${viewport.height}px`;
+                wrapper.style.width = `${viewport.width}px`;
+                wrapper.style.height = `${viewport.height}px`;
+                container.style.width = `${viewport.width}px`;
+                container.style.height = `${viewport.height}px`;
+
+                pdfPage.render({
+                    canvasContext,
+                    viewport
+                });
+
+                pdfPage.getTextContent().then(textContentSource => {
+                    pdfjsLib.renderTextLayer({
+                        textContentSource: textContentSource,
+                        container: container,
+                        viewport: viewport,
+                        textDivs: []
+                    });;
+                });
+
+                page.setAttribute('data-loaded', 'true');
+
+                //viewer.style.height = `${viewport.height * pdfDocument.numPages}px`;
+                viewer.style.height = 'auto';
+                viewer.style.overflowX = 'auto'
+                return pdfPage;
+            });
+        }
+    </script>
+</body>
+
+</html>
+
+我使用pdfViewer.setDocument(pdfDocument);
+出現以下訊息renderView: "TypeError: Cannot set properties of undefined (setting 'width')"

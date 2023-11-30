@@ -1,6 +1,17 @@
-127:9999 --command=/host=server-APP/server-config=cms-server:start
-14:21:16 {
-14:21:16     "outcome" => "failed",
-14:21:16     "failure-description" => "WFLYCTL0158: Operation handler failed: java.lang.IllegalStateException",
-14:21:16     "rolled-back" => true
-14:21:16 }
+        loadPDF(jsUrlAsString, scale);
+       
+        function loadPDF(pdfurl, scale) {
+            pdfjsLib.getDocument(pdfurl).promise.then(pdf => {
+                pdfDocument = pdf;
+                let viewer = document.getElementById('viewer');
+                for (let i = 1; i <= pdfDocument.numPages; i++) {
+                    let page = createEmptyPage(i, i);
+                    viewer.appendChild(page);
+                }
+                for (var j = 1; j <= pdfDocument.numPages; j++) {
+                    loadPage(j, scale, j).then(pdfPage => {
+                        pdfPage.currentScaleValue = 'page-width';
+                    });
+                }
+            });
+        }

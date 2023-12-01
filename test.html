@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>testHTML</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Sharp:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+</head>
+<style>
+    body {
+        background-color: rgb(211, 213, 216);
+        font-size: 48px;
+    }
+
+    #viewer {
+        justify-content: center;
+        align-items: center;
+
+    }
+
+    .page {
+        background-color: white;
+        /* 頁面背景色 */
+        border: 1px solid #ccc;
+        /* 頁面邊框 */
+        margin: 1px auto -8px auto
+    }
+
+    .scale-select-div>* {
+        align-items: center;
+    }
+
+    .toolbar {
+        display: flex;
+        background-color: rgb(101, 102, 102);
+        height: 90px;
+        padding: 20px 50px;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 20px;
+        top: 0;
+        position: fixed;
+    }
+
+    img {
+        transform: scale(3);
+        margin-right: 50px;
+    }
+
+    .scale-select {
+        margin-right: 50px;
+    }
+
+    .arrow {
+        margin-right: 50px;
+    }
+
+    .material-symbols-outlined {
+        margin-right: 50px;
+        color: white;
+        transform: scale(3);
+        font-variation-settings:
+            'FILL' 0,
+            'wght' 800,
+            'GRAD' 0,
+            'opsz' 24
+    }
+
+    .material-symbols-sharp {
+        margin-right: 50px;
+        color: white;
+        transform: scale(3);
+        font-variation-settings:
+            'FILL' 1,
+            'wght' 700,
+            'GRAD' 200,
+            'opsz' 40
+    }
+
+    span:hover {
+        cursor: pointer;
+    }
+
+    #pageNum {
+        width: 85px;
+        font-size: 48px;
+        background-color: rgb(63, 75, 91);
+        text-align: right;
+        color: white;
+        border-radius: 10px;
+    }
+
+    .scale-select {
+        width: 250px;
+        font-size: 48px;
+    }
+
+    .voice-time {
+        margin-right: 50px;
+        font-size: 48px;
+        color: white;
+    }
+
+    #numPages {
+        color: white;
+        cursor: default
+    }
+
+    #viewerContainer {
+        overflow: auto;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+    }
+</style>
+
+<body>
+
+    <div class="toolbar">
+        <div class="arrow">
+
+            <span id="prev-page" class="material-symbols-outlined upward">
+                arrow_upward
+            </span>
+
+
+            <span id="next-page" class="material-symbols-sharp">
+                arrow_downward
+            </span>
+
+            <input id="pageNum" onkeyup="this.value=this.value.replace(/\D/g,'')"
+                onafterpaste="this.value=this.value.replace(/\D/g,'')" value="1"><span id="numPages"></span>
+        </div>
+        <div class="zoom">
+            <span class="material-symbols-sharp zoom-out">
+                zoom_out
+            </span>
+
+            <span class="material-symbols-sharp">
+                zoom_in
+            </span>
+            <select id="scale-select" class="scale-select">
+                <option value="page-width" selected>頁面寬度</option>
+                <option value="50">50%</option>
+                <option value="75">75%</option>
+                <option value="100">100%</option>
+                <option value="125">125%</option>
+                <option value="150">150%</option>
+                <option value="200">200%</option>
+                <option value="300">300%</option>
+                <option value="400">400%</option>
+            </select>
+        </div>
+        <div class="playContro">
+            <span class="material-symbols-sharp">
+                replay_10
+            </span>
+            <span class="material-symbols-sharp play_circle">
+                play_circle
+            </span>
+            <span class="voice-time"></span>
+            <span class="material-symbols-sharp">
+                forward_10
+            </span>
+        </div>
+    </div>
+
+
+    <div id="viewer-container">
+        <div id="viewer" class="pdfViewer"></div>
+    </div>
+
+    <script src="pdf.js"></script>
+    <script src="pdf.worker.js"></script>
+    <script src="pdf_viewer.js"></script>
+    <script src="jquery-3.2.1.min.js"></script>
+    <script>
+        var pdfDocument = null;
+        var jsUrl = './FHP_11007.pdf';
+        var jsUrlAsString = jsUrl.toString();
+        var currentPage = 1;
+        var scale = "page-width"; // 默认为页面宽度
+        const eventBus = new pdfjsViewer.EventBus();
+        var pdfViewer;
+
+        // 在 loadPDF 完成後執行其他操作
+        loadPDF(jsUrlAsString, scale);
+
+        function loadPDF(pdfurl, scale) {
+            pdfjsLib.getDocument(pdfurl).promise.then(pdf => {
+                pdfDocument = pdf;
+                let viewer = document.getElementById('viewer');
+                for (let i = 1; i <= pdfDocument.numPages; i++) {
+                    let page = createEmptyPage(i, i);
+                    viewer.appendChild(page);
+                }
+                // 返回一個 Promise，表示成功完成
+                Promise.all(Array.from({ length: pdfDocument.numPages }, (_, i) => loadPage(i + 1, scale, i + 1)))
+                    .then(pdfPages => {
+                        pdfPages.forEach(pdfPage => {
+                            pdfPage.currentScaleValue = 'page-width';
+                        });
+                    });
+
+            });
+
+            var pdf_Viewer = new pdfjsViewer.PDFViewer({
+                container: document.getElementById('viewer-container'),
+                eventBus: eventBus,
+            })
+            var pdfLinkService = new pdfjsViewer.PDFLinkService();
+
+            pdf_Viewer.setLinkService(pdfLinkService);
+
+            var loadingTask = pdfjsLib.getDocument({ url: jsUrlAsString });
+
+            loadingTask.promise.then(function (pdfDocument2) {
+                // 将 PDFDocument 与 PDFViewer 关联
+                pdf_Viewer.setDocument(pdfDocument2);
+
+                // 设置 PDFLinkService 的文档
+                pdfLinkService.setDocument(pdfDocument2, null);
+
+                // 在文档加载完成后，设置当前页
+                pdfDocument2.getPage(3).then(function (page) {
+                    pdf_Viewer.currentPageNumber = 3;
+                    console.log(pdf_Viewer.currentPageNumber); // 输出 3
+                });
+            }).catch(function (reason) {
+                console.error('Error loading PDF: ' + reason);
+            });
+
+
+        }
+        function createEmptyPage(num, k) {
+            let page = document.createElement('div');
+            let canvas = document.createElement('canvas');
+            let wrapper = document.createElement('div');
+            let textLayer = document.createElement('div');
+
+            page.className = 'page';
+            wrapper.className = 'canvasWrapper';
+            textLayer.className = 'textLayer';
+
+            page.setAttribute('id', `pageContainer-` + k);
+            page.setAttribute('data-loaded', 'false');
+            page.setAttribute('data-page-number', num);
+
+            // canvas.setAttribute('id', `page${num}-` + k);
+
+            page.appendChild(wrapper);
+            page.appendChild(textLayer);
+            wrapper.appendChild(canvas);
+
+            return page;
+        }
+        function loadPage(pageNum, scale, k) {
+            return pdfDocument.getPage(pageNum).then(pdfPage => {
+                let page = document.getElementById(`pageContainer-` + k);
+                let canvas = page.querySelector('canvas');
+                let wrapper = page.querySelector('.canvasWrapper');
+                let container = page.querySelector('.textLayer');
+                let canvasContext = canvas.getContext('2d');
+                let viewport = pdfPage.getViewport({ scale: scale });
+                if (scale === 'page-width') {
+                    var page_width = document.getElementById('viewer').clientWidth / pdfPage.getViewport({ scale: 1 }).width
+                    viewport = pdfPage.getViewport({ scale: page_width });
+                }
+                else {
+                    // 將scale轉換為數字類型再進行計算
+                    var scaleValue = parseFloat(scale) / 100;
+                    viewport = pdfPage.getViewport({ scale: scaleValue });
+                    container.style.transform = `scale(${scaleValue})`;
+                }
+
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                page.style.width = `${viewport.width}px`;
+                page.style.height = `${viewport.height}px`;
+                wrapper.style.width = `${viewport.width}px`;
+                wrapper.style.height = `${viewport.height}px`;
+                container.style.width = `${viewport.width}px`;
+                container.style.height = `${viewport.height}px`;
+
+                pdfPage.render({
+                    canvasContext,
+                    viewport
+                });
+
+                pdfPage.getTextContent().then(textContentSource => {
+                    pdfjsLib.renderTextLayer({
+                        textContentSource: textContentSource,
+                        container: container,
+                        viewport: viewport,
+                        textDivs: []
+                    });;
+                });
+
+                page.setAttribute('data-loaded', 'true');
+
+                //viewer.style.height = `${viewport.height * pdfDocument.numPages}px`;
+                viewer.style.height = 'auto';
+                viewer.style.overflowX = 'auto'
+                return pdfPage;
+            });
+        }
+        // 以下是添加事件監聽器的部分
+        document.getElementById('scale-select').addEventListener('change', function () {
+            var selectedScale = this.value;
+
+            for (var j = 1; j <= pdfDocument.numPages; j++) {
+                loadPage(j, selectedScale, j).then(pdfPage => {
+                    pdfPage.currentScaleValue = selectedScale;
+                });
+            }
+        });
+        var isEditingInput = false;
+        // 获取输入框元素
+        var inputElement = document.getElementById('pageNum');
+        inputElement.addEventListener('focus', function () {
+            isEditingInput = true;
+        });
+
+        inputElement.addEventListener('blur', function () {
+            isEditingInput = false;
+        });
+        inputElement.addEventListener('keydown', function (event) {
+            // 按下 Enter 鍵時執行相應的換頁代碼
+            if (event.key === 'Enter' || event.keyCode === 13) {
+                event.preventDefault();
+                scrollToPage(inputElement.value);
+            }
+        });
+
+
+        // 滾動到指定頁面
+        function scrollToPage(pageNum) {
+            var targetPage = document.getElementById('pageContainer-' + pageNum);
+            if (targetPage) {
+                targetPage.scrollIntoView({ behavior: 'smooth' });
+                //set currentPage
+                currentPage = pageNum;
+                //set input
+                document.getElementById('pageNum').value = currentPage;
+            }
+        }
+        var divs = document.getElementsByClassName('page');
+        // 添加滚动事件监听器到包含滑动的容器
+        document.addEventListener('scroll', function () {
+            if (!isEditingInput) {
+                // 遍历所有 div
+                for (var i = 0; i < divs.length; i++) {
+                    var divRect = divs[i].getBoundingClientRect();
+
+                    // 检查是否滚动到当前 div
+                    if (divRect.top <= 0 && divRect.bottom > 0) {
+                        // 滚动到当前 div，将输入框值设置为对应的值
+                        inputElement.value = (i + 1).toString();
+                        break; // 如果找到匹配的 div，退出循环
+                    }
+                }
+            }
+        });
+
+        document.getElementById('prev-page').addEventListener('click', function () {
+            pdfViewer.currentPageNumber = currentPage - 1;
+        });
+
+        document.getElementById('next-page').addEventListener('click', function () {
+            pdfViewer.currentPageNumber = currentPage + 1;
+            //scrollToPage(currentPage + 1);
+        });
+
+    </script>
+</body>
+
+</html>

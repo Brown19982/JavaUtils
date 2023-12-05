@@ -5,6 +5,10 @@ var loadingTask = pdfjsLib.getDocument('./QJW_11210.pdf')
 
 // var voice_url = document.getElementById('voice_url').innerText;
 var voice_url_str = './測試錄音檔.mp3'
+
+var voice_setting = '00:00,05:20,07:25,09:11,10:22,12:34,15:50'
+var settings = voice_setting.split(',')
+var settingMap = {}
 var audio = new Audio(voice_url_str)
 var timeDisplay = document.getElementById('voice-time')
 audio.addEventListener('loadedmetadata', function () {
@@ -16,6 +20,9 @@ audio.addEventListener('loadedmetadata', function () {
   var totalSeconds = Math.floor(totalTime % 60)
   var formattedTotalTime = totalMinutes + ':' + (totalSeconds < 10 ? '0' : '') + totalSeconds
   timeDisplay.textContent = formattedTotalTime
+  audio.play()
+  play_circle.style.display = 'none'
+  stop_circle.style.display = ''
 })
 // 监听音频时间更新事件
 audio.addEventListener('timeupdate', function () {
@@ -43,6 +50,12 @@ loadingTask.promise.then(function (pdfDocument) {
     eventBus: eventBus,
   })
   pdfViewer.setDocument(pdfDocument)
+  //確認頁碼跟語音設定是否一致
+  if (pdf_doc.numPages == settings.length) {
+    for (var i = 0; i < pdf_doc.numPages; i++) {
+      settingMap[i + 1] = settings[i]
+    }
+  }
 })
 
 
@@ -75,6 +88,7 @@ document.getElementById('prev-page').addEventListener('click', function () {
   if (currentPage != 1) {
     currentPage = currentPage - 1
     pageInput.value = currentPage
+    setCurrentTime(settingMap[currentPage])
     pdfViewer.scrollPageIntoView({ pageNumber: currentPage })
   }
 })
@@ -84,6 +98,7 @@ document.getElementById('next-page').addEventListener('click', function () {
   if (currentPage != pdf_doc.numPages) {
     currentPage = currentPage + 1
     pageInput.value = currentPage
+    setCurrentTime(settingMap[currentPage])
     pdfViewer.scrollPageIntoView({ pageNumber: currentPage })
   }
 })
@@ -98,10 +113,12 @@ pageInput.addEventListener('keyup', function (event) {
     if (pageNumber > 0 && pageNumber <= pdf_doc.numPages) {
       // 設定新的頁碼
       pageNum = pageNumber
-      // 調用換頁函數
-      pdfViewer.currentPageNumber = pageNumber
+
       currentPage = pageNum
       pageInput.value = currentPage
+      setCurrentTime(settingMap[currentPage])
+      // 調用換頁函數
+      pdfViewer.currentPageNumber = pageNumber
       event.stopPropagation()
     }
   }
@@ -115,6 +132,7 @@ viewerContainer.addEventListener('scroll', function () {
       if (divRect.top <= 0 && divRect.bottom > 0) {
         currentPage = i + 1
         pageInput.value = (i + 1).toString()
+        setCurrentTime(settingMap[currentPage])
         break
       }
     }
@@ -122,3 +140,18 @@ viewerContainer.addEventListener('scroll', function () {
   isKeyUpEvent = false
   isPrevNextButtonClick = false
 })
+
+//指定語音檔分秒
+function setCurrentTime (targetTimeString) {
+  console.log(targetTimeString)
+  var targetTimeInSeconds = parseTimeStringToSeconds(targetTimeString)
+  audio.currentTime = Math.min(targetTimeInSeconds, audio.duration)
+}
+
+// 将时间字符串解析为秒数
+function parseTimeStringToSeconds (timeString) {
+  var parts = timeString.split(":")
+  var minutes = parseInt(parts[0], 10) || 0
+  var seconds = parseInt(parts[1], 10) || 0
+  return minutes * 60 + seconds
+}

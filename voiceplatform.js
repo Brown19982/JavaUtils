@@ -6,42 +6,61 @@ var loadingTask = pdfjsLib.getDocument('./QJW_11210.pdf')
 // var voice_url = document.getElementById('voice_url').innerText;
 var voice_url_str = './測試錄音檔.mp3'
 
-var voice_setting = '00:00,05:20,07:25,09:11,10:22,12:34,15:50'
+var voice_setting = '00:00,00:05,07:25,09:11,10:22,12:34,15:50'
 var settings = voice_setting.split(',')
 var settingMap = {}
+
+var pageInput = document.getElementById('pageNum')
+pageInput.value = 1
+
+const eventBus = new pdfjsViewer.EventBus()
+var currentPage = 1
+var pdf_doc
+
+var isKeyUpEvent = false
+var isPrevNextButtonClick = false
+var isTimeupdate = false
+
+var play_circle = document.getElementById('play_circle')
+var stop_circle = document.getElementById('stop_circle')
+
 var audio = new Audio(voice_url_str)
 var timeDisplay = document.getElementById('voice-time')
 audio.addEventListener('loadedmetadata', function () {
   // 获取总时长
   var totalTime = audio.duration
-
   // 将总时长显示在 span 元素上
   var totalMinutes = Math.floor(totalTime / 60)
   var totalSeconds = Math.floor(totalTime % 60)
   var formattedTotalTime = totalMinutes + ':' + (totalSeconds < 10 ? '0' : '') + totalSeconds
   timeDisplay.textContent = formattedTotalTime
-  audio.play()
-  play_circle.style.display = 'none'
-  stop_circle.style.display = ''
+  const promise = audio.play()
+  if (promise !== undefined) {
+    promise.then(() => {
+      // Autoplay started
+      play_circle.style.display = 'none'
+      stop_circle.style.display = ''
+    })
+  }
 })
 // 监听音频时间更新事件
 audio.addEventListener('timeupdate', function () {
   // 更新显示分:秒格式的时间
   var minutes = Math.floor(audio.currentTime / 60)
   var seconds = Math.floor(audio.currentTime % 60)
-  var formattedTime = minutes + ':' + (seconds < 10 ? '0' : '') + seconds
-
+  var formattedTime = (minutes == 0 ? '00' : minutes) + ':' + (seconds < 10 ? '0' : '') + seconds
+  for (var i = 1; i <= pdf_doc.numPages; i++) {
+    if (formattedTime == settingMap[i]) {
+      isTimeupdate = true
+      pdfViewer.currentPageNumber = i
+      pageInput.value = i
+      currentPage = i
+      pdfViewer.scrollPageIntoView({ pageNumber: currentPage })
+    }
+  }
   // 将时间更新显示在 span 元素上
   timeDisplay.textContent = formattedTime
 })
-
-const eventBus = new pdfjsViewer.EventBus()
-var currentPage = 1
-var pdf_doc
-var pageInput = document.getElementById('pageNum')
-pageInput.value = 1
-var isKeyUpEvent = false
-var isPrevNextButtonClick = false
 
 loadingTask.promise.then(function (pdfDocument) {
   pdf_doc = pdfDocument
@@ -57,10 +76,6 @@ loadingTask.promise.then(function (pdfDocument) {
     }
   }
 })
-
-
-var play_circle = document.getElementById('play_circle')
-var stop_circle = document.getElementById('stop_circle')
 //播放語音
 play_circle.addEventListener('click', function () {
   play_circle.style.display = 'none'
@@ -126,7 +141,7 @@ pageInput.addEventListener('keyup', function (event) {
 //滾動頁面
 var divs = document.getElementsByClassName("page")
 viewerContainer.addEventListener('scroll', function () {
-  if (!isKeyUpEvent && !isPrevNextButtonClick) {
+  if (!isKeyUpEvent && !isPrevNextButtonClick && !isTimeupdate) {
     for (var i = 0; i < divs.length; i++) {
       var divRect = divs[i].getBoundingClientRect()
       if (divRect.top <= 0 && divRect.bottom > 0) {
@@ -139,6 +154,7 @@ viewerContainer.addEventListener('scroll', function () {
   }
   isKeyUpEvent = false
   isPrevNextButtonClick = false
+  isTimeupdate = false
 })
 
 //指定語音檔分秒
